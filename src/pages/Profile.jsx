@@ -1,19 +1,62 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getAuth, signOut, updateProfile } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import {
+  doc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
+import { useNavigate, Link } from "react-router-dom";
 import { firestore } from "../firebase.config";
 import { toast } from "react-toastify";
+import arrowRight from "../assets/svg/keyboardArrowRightIcon.svg";
+import homeIcon from "../assets/svg/homeIcon.svg";
+import Spinner from "../components/Spinner";
+import ListingItem from "../components/ListingItem";
 
 const Profile = () => {
   const auth = getAuth();
   const [changeDetails, setChangeDetails] = useState(false);
+  const [listings, setlistings] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     email: auth.currentUser.email,
     name: auth.currentUser.displayName,
   });
   const { name, email } = formData;
   const navigate = useNavigate();
+
+  // TODO: 110=> 1:42
+
+  useEffect(() => {
+    const getUserListings = async () => {
+      const listingsRef = collection(firestore, "listings");
+      const qry = query(
+        listingsRef,
+        where("userRef", "==", auth.currentUser.uid),
+        orderBy("timestamp", "desc")
+      );
+      const querySnap = await getDocs(qry);
+      const tempListing = [];
+      querySnap.forEach((doc) => {
+        tempListing.push({
+          data: doc.data(),
+          id: doc.id,
+        });
+      });
+
+      setlistings(tempListing);
+      console.log(tempListing);
+      setIsLoading(false);
+    };
+
+    getUserListings();
+  }, [auth.currentUser.uid]);
+
   const handleLogOut = () => {
     signOut(auth);
     navigate("/");
@@ -38,6 +81,20 @@ const Profile = () => {
       [e.target.id]: e.target.value,
     }));
   };
+
+  const handleDelete = async (listingId) => {
+    if (window.confirm("Are you sure you want to DELETE this listing?")) {
+      await deleteDoc(doc(firestore, "listings", listingId));
+      const updatedListing = listings.filter(
+        (listing) => listings.id !== listingId
+      );
+      setlistings(updatedListing);
+      toast.success("Listing Deleted Successfully!");
+    }
+  };
+
+  const handleEdit = async (listingId) =>
+    navigate(`/edit-listing/${listingId}`);
 
   return (
     <div className="profile">
@@ -81,6 +138,29 @@ const Profile = () => {
             />
           </form>
         </div>
+        <Link to="/create-listing" className="createListing">
+          <img src={homeIcon} alt="Home" />
+          <p>Sell or Rent your Home</p>
+          <img src={arrowRight} alt="" />
+        </Link>
+        {isLoading && <Spinner />}
+
+        {!isLoading && listings && (
+          <>
+            <p className="listingText">Listings</p>
+            <ul className="listingList">
+              {listings?.map(({ data, id }) => (
+                <ListingItem
+                  key={id}
+                  listing={data}
+                  id={id}
+                  handleDelete={() => handleDelete(id)}
+                  handleEdit={() => handleEdit(id)}
+                />
+              ))}
+            </ul>
+          </>
+        )}
       </main>
     </div>
   );

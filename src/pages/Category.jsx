@@ -7,17 +7,21 @@ import {
   where,
   orderBy,
   limit,
+  startAfter,
 } from "firebase/firestore";
-import Spinner from "../components/Spinner";
 import { firestore } from "../firebase.config";
+import Spinner from "../components/Spinner";
+import ListingItem from "../components/ListingItem";
 
 const Category = () => {
   const [listings, setListings] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastFetchedListing, setLastFetchedListing] = useState(null);
+
   const params = useParams();
 
   useEffect(() => {
-    (async () => {
+    const getListings = async () => {
       try {
         const listingsRef = collection(firestore, "listings");
         const qry = query(
@@ -29,6 +33,10 @@ const Category = () => {
         const list = [];
 
         const querySnapshot = await getDocs(qry);
+
+        const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+        setLastFetchedListing(lastVisible);
+
         querySnapshot.forEach((doc) => {
           list.push({
             id: doc.id,
@@ -40,10 +48,41 @@ const Category = () => {
         console.log(error);
       }
       setIsLoading(false);
-    })();
+    };
+    getListings();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleLoadMore = async () => {
+    try {
+      const listingsRef = collection(firestore, "listings");
+      const qry = query(
+        listingsRef,
+        where("type", "==", params.categoryName),
+        orderBy("timestamp", "desc"),
+        startAfter(lastFetchedListing),
+        limit(10)
+      );
+      const list = [];
+
+      const querySnapshot = await getDocs(qry);
+
+      const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+      setLastFetchedListing(lastVisible);
+
+      querySnapshot.forEach((doc) => {
+        list.push({
+          id: doc.id,
+          data: doc.data(),
+        });
+      });
+      setListings((previousState) => [...previousState, ...list]);
+    } catch (error) {
+      console.log(error);
+    }
+    setIsLoading(false);
+  };
 
   return (
     <div className="category">
@@ -60,10 +99,17 @@ const Category = () => {
           <main>
             <ul className="categoryListings">
               {listings.map((item) => (
-                <h3 key={item.id}>{item.data.name}</h3>
+                <ListingItem key={item.id} listing={item.data} id={item.id} />
               ))}
             </ul>
           </main>
+          <br />
+          <br />
+          {lastFetchedListing && (
+            <p className="loadMore" onClick={handleLoadMore}>
+              Load More
+            </p>
+          )}
         </>
       ) : (
         <h3>Nothing to Display yet!</h3>
