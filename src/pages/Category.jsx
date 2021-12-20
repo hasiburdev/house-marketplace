@@ -12,6 +12,7 @@ import {
 import { firestore } from "../firebase.config";
 import Spinner from "../components/Spinner";
 import ListingItem from "../components/ListingItem";
+import { toast } from "react-toastify";
 
 const Category = () => {
   const [listings, setListings] = useState(null);
@@ -45,7 +46,7 @@ const Category = () => {
         });
         setListings(list);
       } catch (error) {
-        console.log(error);
+        toast.error("Something went wrong!");
       }
       setIsLoading(false);
     };
@@ -79,7 +80,7 @@ const Category = () => {
       });
       setListings((previousState) => [...previousState, ...list]);
     } catch (error) {
-      console.log(error);
+      toast.error("Something went wrong!");
     }
     setIsLoading(false);
   };

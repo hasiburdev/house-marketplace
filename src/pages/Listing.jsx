@@ -26,7 +26,6 @@ const Listing = () => {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setListing(docSnap.data());
-        console.log(docSnap.data());
       }
       setIsLoading(false);
     };

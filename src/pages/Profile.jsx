@@ -50,7 +50,6 @@ const Profile = () => {
       });
 
       setlistings(tempListing);
-      console.log(tempListing);
       setIsLoading(false);
     };
 

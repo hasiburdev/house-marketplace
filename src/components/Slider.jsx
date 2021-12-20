@@ -28,7 +28,6 @@ const Slider = () => {
           data: doc.data(),
         });
       });
-      console.log(localListings);
       setListings(localListings);
 
       setIsLoading(false);

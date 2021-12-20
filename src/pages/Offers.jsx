@@ -11,6 +11,7 @@ import {
 import { firestore } from "../firebase.config";
 import Spinner from "../components/Spinner";
 import ListingItem from "../components/ListingItem";
+import { toast } from "react-toastify";
 
 const Offers = () => {
   const [listings, setListings] = useState(null);
@@ -42,7 +43,7 @@ const Offers = () => {
         });
         setListings(list);
       } catch (error) {
-        console.log(error);
+        toast.error("Something went wrong!");
       }
       setIsLoading(false);
     })();
